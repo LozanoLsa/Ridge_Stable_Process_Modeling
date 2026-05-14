@@ -210,9 +210,147 @@ k3.metric("Optimal Alpha",      f"α = {metrics['alpha']:.4f}", "5-fold RidgeCV 
 k4.metric("Multicollinearity",  "VIF up to 7.6",               "Power–Speed–Gas triplet")
 
 # ─── TABS ─────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "DATA EXPLORER", "PERFORMANCE", "SIMULATOR", "RIDGE ANALYSIS", "ACTION PLAN"
+tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "CONTEXT", "DATA EXPLORER", "PERFORMANCE", "SIMULATOR", "RIDGE ANALYSIS", "ACTION PLAN"
 ])
+
+# ══ TAB 0 · CONTEXT ════════════════════════════════════════════════════════════
+with tab0:
+    st.markdown('<div class="lsa-section">// Why this project exists</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="background:var(--card);border:1px solid var(--border);
+                border-left:4px solid var(--accent);border-radius:3px;
+                padding:1.4rem 1.6rem;margin-bottom:1.2rem;">
+        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:1.15rem;
+                    font-style:italic;color:var(--text);line-height:1.6;">
+            "When your process variables move together, your model needs a steadying hand — that's what Ridge does."
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_a, col_b = st.columns([1.05, 1])
+
+    with col_a:
+        st.markdown("""
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:1.3rem 1.5rem;margin-bottom:10px;">
+            <div style="font-family:var(--fm);font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;">// The Business Problem</div>
+            <div style="font-family:var(--fh);font-size:0.88rem;color:var(--text);line-height:1.75;">
+                In <strong style="color:#fff;">precision laser cutting</strong>, surface roughness (Ra) is the primary quality gate.
+                A part that exceeds Ra ≤ 3.2 µm must be deburred, polished, or scrapped —
+                none of which is recoverable in high-mix, low-batch environments.<br><br>
+                The problem is not a lack of data. Modern CNC laser systems log dozens of parameters
+                at every cut. The problem is that the most important variables —
+                <strong style="color:var(--accent2);">laser power, cutting speed, and assist gas pressure</strong> —
+                are <em>structurally correlated</em>: an operator who increases power will
+                also increase speed and gas flow, because that is correct engineering practice.<br><br>
+                This creates <strong style="color:var(--warn);">multicollinearity</strong> that inflates OLS coefficient
+                estimates and makes them unreliable for process guidance. A model that points
+                the engineer in the wrong direction on a single lever is worse than no model.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:1.3rem 1.5rem;">
+            <div style="font-family:var(--fm);font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;">// Why Ridge, Not OLS or Lasso</div>
+            <div style="font-family:var(--fh);font-size:0.88rem;color:var(--text);line-height:1.75;">
+                <strong style="color:var(--danger);">OLS</strong> inflates coefficients under collinearity —
+                a coefficient's sign can even flip depending on the training sample.<br><br>
+                <strong style="color:var(--warn);">Lasso (Project 09)</strong> solves a different problem: it zeros out
+                irrelevant variables. But here all 8 laser parameters have clear physical
+                justification — none should be discarded.<br><br>
+                <strong style="color:var(--accent2);">Ridge</strong> applies an L2 penalty that shrinks all coefficients
+                proportionally, distributing the shared explanatory power across correlated
+                variables rather than arbitrarily amplifying one. The result is a
+                <em>stable, physically interpretable model</em> that can actually guide
+                recipe decisions — before the cut is made.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_b:
+        st.markdown("""
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:1.3rem 1.5rem;margin-bottom:10px;">
+            <div style="font-family:var(--fm);font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;">// Dataset at a Glance</div>
+            <div style="font-family:var(--fm);font-size:0.75rem;color:var(--text);line-height:2.1;">
+                <span style="color:var(--muted);">Records</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1,500 cut records from a CNC laser system<br>
+                <span style="color:var(--muted);">Target</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; surface_roughness_ra_um (Ra, µm)<br>
+                <span style="color:var(--muted);">Ra Range</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.91 – 5.70 µm &nbsp;·&nbsp; Mean 3.18 µm<br>
+                <span style="color:var(--muted);">Spec Limit</span> &nbsp;&nbsp;&nbsp; Ra ≤ 3.2 µm<br>
+                <span style="color:var(--muted);">In-Spec</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 52.2% of cuts pass as-is<br>
+                <span style="color:var(--muted);">Materials</span> &nbsp;&nbsp;&nbsp;&nbsp; Carbon Steel · Aluminium<br>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:1.3rem 1.5rem;margin-bottom:10px;">
+            <div style="font-family:var(--fm);font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;">// Key Results</div>
+            <div style="font-family:var(--fm);font-size:0.75rem;color:var(--text);line-height:2.1;">
+                <span style="color:var(--muted);">Algorithm</span> &nbsp;&nbsp;&nbsp; Ridge Regression · L2 + RidgeCV<br>
+                <span style="color:var(--muted);">R²</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.7220 &nbsp;·&nbsp; 72.2% of Ra variance explained<br>
+                <span style="color:var(--muted);">RMSE</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ±0.394 µm &nbsp;·&nbsp; 12% of spec limit<br>
+                <span style="color:var(--muted);">Alpha (CV)</span> &nbsp; 4.422 &nbsp;·&nbsp; selected via 5-fold, 80 candidates<br>
+                <span style="color:var(--muted);">Max VIF</span> &nbsp;&nbsp;&nbsp;&nbsp; 7.6 on laser power &nbsp;·&nbsp; Ridge flag<br>
+                <span style="color:var(--muted);">vs OLS</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Same R² — Ridge wins on stability<br>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="background:var(--card);border:1px solid var(--border);
+                    border-left:3px solid var(--ok);border-radius:3px;padding:1.1rem 1.4rem;">
+            <div style="font-family:var(--fm);font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;margin-bottom:8px;">// What the simulator shows</div>
+            <div style="font-family:var(--fh);font-size:0.84rem;color:var(--text);line-height:1.7;">
+                Correcting a bad recipe on <strong style="color:#fff;">12 mm steel</strong> —
+                raising power by 1300W, reducing speed by 17 mm/s, increasing gas flow by 5 L/min —
+                recovers <strong style="color:var(--ok);">1.24 µm Ra</strong>.<br><br>
+                From <strong style="color:var(--danger);">4.17 µm (fail)</strong> to
+                <strong style="color:var(--ok);">2.94 µm (pass)</strong>.
+                The correction is <em>quantified</em>, not guessed.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+    st.markdown('<div class="lsa-section">// Top coefficient drivers — what moves the needle on Ra</div>', unsafe_allow_html=True)
+
+    coeff_data = [
+        ("+0.385", "Material Thickness (mm)", "↑ Increases Ra", C_DANGER,
+         "Dominant driver. Thicker material demands more energy; insufficient energy → rough cut edge."),
+        ("−0.304", "Material Type (Aluminium)", "↓ Reduces Ra", C_TEAL,
+         "Aluminium's superior thermal conductivity consistently produces smoother cuts than steel."),
+        ("−0.268", "Laser Power (W)", "↓ Reduces Ra", C_TEAL,
+         "More power → cleaner melt ejection → smoother edge. Ridge keeps this stable vs OLS."),
+        ("−0.190", "Gas Flow (L/min)", "↓ Reduces Ra", C_TEAL,
+         "Assist gas removes molten material from the cut zone. Stable estimate — not inflated by collinearity."),
+        ("+0.052", "O₂ in Gas (%)", "↑ Increases Ra", C_WARN,
+         "Higher oxygen increases oxidation on the cut edge, mildly roughening it."),
+    ]
+
+    cols_c = st.columns(5)
+    for col, (coef, feat, direction, color, note) in zip(cols_c, coeff_data):
+        with col:
+            st.markdown(f"""
+            <div style="background:var(--card);border:1px solid var(--border);
+                        border-top:3px solid {color};border-radius:3px;padding:1rem 1rem;height:100%;">
+                <div style="font-family:var(--fm);font-size:1.6rem;font-weight:700;
+                            color:{color};line-height:1;">{coef}</div>
+                <div style="font-family:var(--fm);font-size:0.58rem;color:#fff;
+                            font-weight:600;margin-top:6px;margin-bottom:2px;">{feat}</div>
+                <div style="font-family:var(--fm);font-size:0.58rem;color:var(--muted);
+                            margin-bottom:8px;">{direction}</div>
+                <div style="font-family:var(--fh);font-size:0.72rem;color:var(--muted);line-height:1.5;">{note}</div>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="margin-top:10px;font-family:var(--fm);font-size:0.62rem;color:var(--muted);
+                letter-spacing:.06em;text-align:center;">
+        All coefficients are standardised (per-σ units) — comparable across features measured in different physical units.
+        &nbsp;·&nbsp; Cutting speed, focal offset, and shop temp also active but smaller in magnitude.
+    </div>
+    """, unsafe_allow_html=True)
 
 # ══ TAB 1 ══════════════════════════════════════════════════════════════════════
 with tab1:
