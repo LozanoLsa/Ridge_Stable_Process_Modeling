@@ -1,0 +1,49 @@
+PROJECT: 10_Ridge_SUP
+TITLE: Data Sources & Feature Engineering
+
+--------------------------------------------------
+OVERVIEW:
+This dataset contains 1,847 cut records from a CNC laser system controller complemented by surface quality measurements from a post-cut CMM inspection station. The ML task is regression to predict surface roughness Ra (micrometers) from eight process variables. Target range: 0.81–5.74 µm, mean 3.19 µm, specification Ra ≤ 3.2 µm, 51.8% in-spec. Ridge regression is used to stabilize correlated process variables (laser power, cutting speed, and gas pressure move together by engineering design, creating multicollinearity with VIF up to 7.6).
+
+--------------------------------------------------
+REAL-WORLD DATA SOURCES:
+
+Feature                   | Source System              | Instrument
+--------------------------|----------------------------|--------------------------
+laser_power_w             | CNC Laser Controller / G-Code Log | Program parameters from cutting recipe file, logged at job start
+cutting_speed_mm_s        | CNC Laser Controller / G-Code Log | Program parameters from cutting recipe file, logged at job start
+assist_gas_flow_l_min     | Gas Console / Flow Controller | Shielding/assist gas parameters — set at job setup or material changeover
+oxygen_pct                | Gas Console / Flow Controller | Gas composition — set at job setup or material changeover
+focal_offset_mm           | CNC Laser Controller       | Focal offset setting from cutting head configuration, per recipe
+material_thickness_mm     | ERP / Production Order     | Nominal sheet thickness from job traveller or material spec
+material_type             | ERP / Material Master      | Binary flag (steel/aluminium) from job setup — recorded at job start
+shop_temp_c               | Environmental Sensor       | Bay-level ambient temperature at cut time
+surface_roughness_ra_um   | Post-Cut CMM / Profilometer | Ra measurement taken at cut edge after job completes — TARGET variable
+
+--------------------------------------------------
+VARIABLE DESCRIPTIONS:
+
+laser_power_w          - Laser beam power (W); Ridge coefficient -0.234 — more power produces cleaner melt ejection and smoother edge.
+cutting_speed_mm_s     - Torch travel speed (mm/s); Ridge coefficient -0.032 — faster travel reduces energy density per unit length at wide operating range.
+assist_gas_flow_l_min  - Assist gas flow rate (L/min); Ridge coefficient -0.184 — gas flow assists melt removal. Stable coefficient not artificially amplified by collinearity.
+focal_offset_mm        - Focal point offset from surface (mm; 0 = ideal); Ridge coefficient -0.010 — small stabilised effect.
+material_thickness_mm  - Sheet thickness (mm); dominant driver. Ridge coefficient +0.376 — more material requires more energy; insufficient energy produces rough cut.
+material_type          - 0 = Carbon steel, 1 = Aluminium; Ridge coefficient -0.297 — aluminium's superior thermal conductivity produces lower Ra.
+oxygen_pct             - Oxygen content in assist gas (%); Ridge coefficient +0.046 — higher O2 increases oxidation on cut edge, mildly increasing roughness.
+shop_temp_c            - Ambient temperature in cutting bay (°C); Ridge coefficient +0.015 — small but consistent thermal variation effect.
+surface_roughness_ra_um - Ra surface roughness (µm); regression target. Specification: Ra ≤ 3.2 µm.
+
+--------------------------------------------------
+FEATURE ENGINEERING:
+
+StandardScaler applied to all 8 features — mandatory for Ridge because the L2 penalty shrinks coefficients proportionally and requires comparable scales. RidgeCV evaluated 80 alpha candidates on log scale [0.001, 1000] via 5-fold CV; selected alpha = 4.4215. Ridge and OLS achieve identical R² = 0.645 — Ridge's advantage is coefficient stability under multicollinearity, not higher accuracy. Train/Test split: 80/20, random_state=42.
+
+--------------------------------------------------
+BUSINESS CONTEXT:
+
+Used by CNC process engineers and quality managers in precision laser cutting operations (high-mix, low-batch environments). The model enables pre-cut recipe validation — predicting whether a given power/speed/gas combination will meet Ra specification before material is consumed, and providing a 2D response surface mapping the in-spec operating window for each material type and thickness.
+
+--------------------------------------------------
+GOAL:
+
+Predict surface roughness Ra from laser cutting parameters to improve product quality, reduce rework and scrap, and stabilize cutting recipes under structurally correlated process variables. Model achieved R² = 0.645, RMSE = 0.430 µm, MAE = 0.322 µm.

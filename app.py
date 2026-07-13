@@ -204,8 +204,8 @@ st.markdown(f"""
 
 # ─── TOP KPI ROW ──────────────────────────────────────────────────────────────
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("R² (Test Set)",      f"{metrics['r2']:.4f}",         "72.2% Ra variance explained")
-k2.metric("RMSE",               f"±{metrics['rmse']:.3f} µm",  "12% of spec limit (3.2 µm)")
+k1.metric("R² (Test Set)",      f"{metrics['r2']:.4f}",         "64.5% Ra variance explained")
+k2.metric("RMSE",               f"±{metrics['rmse']:.3f} µm",  "13% of spec limit (3.2 µm)")
 k3.metric("Optimal Alpha",      f"α = {metrics['alpha']:.4f}", "5-fold RidgeCV · 80 candidates")
 k4.metric("Multicollinearity",  "VIF up to 7.6",               "Power–Speed–Gas triplet")
 
@@ -274,11 +274,11 @@ with tab0:
         <div style="background:var(--card);border:1px solid var(--border);border-radius:3px;padding:1.3rem 1.5rem;margin-bottom:10px;">
             <div style="font-family:var(--fm);font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;">// Dataset at a Glance</div>
             <div style="font-family:var(--fm);font-size:0.75rem;color:var(--text);line-height:2.1;">
-                <span style="color:var(--muted);">Records</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1,500 cut records from a CNC laser system<br>
+                <span style="color:var(--muted);">Records</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1,847 cut records from a CNC laser system<br>
                 <span style="color:var(--muted);">Target</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; surface_roughness_ra_um (Ra, µm)<br>
-                <span style="color:var(--muted);">Ra Range</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.91 – 5.70 µm &nbsp;·&nbsp; Mean 3.18 µm<br>
+                <span style="color:var(--muted);">Ra Range</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.81 – 5.74 µm &nbsp;·&nbsp; Mean 3.19 µm<br>
                 <span style="color:var(--muted);">Spec Limit</span> &nbsp;&nbsp;&nbsp; Ra ≤ 3.2 µm<br>
-                <span style="color:var(--muted);">In-Spec</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 52.2% of cuts pass as-is<br>
+                <span style="color:var(--muted);">In-Spec</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 51.8% of cuts pass as-is<br>
                 <span style="color:var(--muted);">Materials</span> &nbsp;&nbsp;&nbsp;&nbsp; Carbon Steel · Aluminium<br>
             </div>
         </div>
@@ -289,8 +289,8 @@ with tab0:
             <div style="font-family:var(--fm);font-size:0.6rem;color:var(--accent);text-transform:uppercase;letter-spacing:.2em;margin-bottom:10px;">// Key Results</div>
             <div style="font-family:var(--fm);font-size:0.75rem;color:var(--text);line-height:2.1;">
                 <span style="color:var(--muted);">Algorithm</span> &nbsp;&nbsp;&nbsp; Ridge Regression · L2 + RidgeCV<br>
-                <span style="color:var(--muted);">R²</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.7220 &nbsp;·&nbsp; 72.2% of Ra variance explained<br>
-                <span style="color:var(--muted);">RMSE</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ±0.394 µm &nbsp;·&nbsp; 12% of spec limit<br>
+                <span style="color:var(--muted);">R²</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.6454 &nbsp;·&nbsp; 64.5% of Ra variance explained<br>
+                <span style="color:var(--muted);">RMSE</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ±0.430 µm &nbsp;·&nbsp; 13% of spec limit<br>
                 <span style="color:var(--muted);">Alpha (CV)</span> &nbsp; 4.422 &nbsp;·&nbsp; selected via 5-fold, 80 candidates<br>
                 <span style="color:var(--muted);">Max VIF</span> &nbsp;&nbsp;&nbsp;&nbsp; 7.6 on laser power &nbsp;·&nbsp; Ridge flag<br>
                 <span style="color:var(--muted);">vs OLS</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Same R² — Ridge wins on stability<br>
@@ -305,9 +305,9 @@ with tab0:
             <div style="font-family:var(--fh);font-size:0.84rem;color:var(--text);line-height:1.7;">
                 Correcting a bad recipe on <strong style="color:#fff;">12 mm steel</strong> —
                 raising power by 1300W, reducing speed by 17 mm/s, increasing gas flow by 5 L/min —
-                recovers <strong style="color:var(--ok);">1.24 µm Ra</strong>.<br><br>
-                From <strong style="color:var(--danger);">4.17 µm (fail)</strong> to
-                <strong style="color:var(--ok);">2.94 µm (pass)</strong>.
+                recovers <strong style="color:var(--ok);">0.984 µm Ra</strong>.<br><br>
+                From <strong style="color:var(--danger);">3.976 µm (fail)</strong> to
+                <strong style="color:var(--ok);">2.992 µm (pass)</strong>.
                 The correction is <em>quantified</em>, not guessed.
             </div>
         </div>
@@ -317,15 +317,15 @@ with tab0:
     st.markdown('<div class="lsa-section">// Top coefficient drivers — what moves the needle on Ra</div>', unsafe_allow_html=True)
 
     coeff_data = [
-        ("+0.385", "Material Thickness (mm)", "↑ Increases Ra", C_DANGER,
+        ("+0.376", "Material Thickness (mm)", "↑ Increases Ra", C_DANGER,
          "Dominant driver. Thicker material demands more energy; insufficient energy → rough cut edge."),
-        ("−0.304", "Material Type (Aluminium)", "↓ Reduces Ra", C_TEAL,
+        ("−0.297", "Material Type (Aluminium)", "↓ Reduces Ra", C_TEAL,
          "Aluminium's superior thermal conductivity consistently produces smoother cuts than steel."),
-        ("−0.268", "Laser Power (W)", "↓ Reduces Ra", C_TEAL,
+        ("−0.234", "Laser Power (W)", "↓ Reduces Ra", C_TEAL,
          "More power → cleaner melt ejection → smoother edge. Ridge keeps this stable vs OLS."),
-        ("−0.190", "Gas Flow (L/min)", "↓ Reduces Ra", C_TEAL,
+        ("−0.184", "Gas Flow (L/min)", "↓ Reduces Ra", C_TEAL,
          "Assist gas removes molten material from the cut zone. Stable estimate — not inflated by collinearity."),
-        ("+0.052", "O₂ in Gas (%)", "↑ Increases Ra", C_WARN,
+        ("+0.046", "O₂ in Gas (%)", "↑ Increases Ra", C_WARN,
          "Higher oxygen increases oxidation on the cut edge, mildly roughening it."),
     ]
 
@@ -354,10 +354,10 @@ with tab0:
 
 # ══ TAB 1 ══════════════════════════════════════════════════════════════════════
 with tab1:
-    st.markdown('<div class="lsa-section">// Dataset — 1,500 laser cut records</div>',
+    st.markdown('<div class="lsa-section">// Dataset — 1,847 laser cut records</div>',
                 unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
-    c1.metric("Records", "1,500")
+    c1.metric("Records", "1,847")
     c2.metric("Steel / Aluminium",
               f"{(df['material_type']==0).sum()} / {(df['material_type']==1).sum()}")
     c3.metric("Spec Limit", f"Ra ≤ {RA_SPEC} µm")
@@ -420,7 +420,7 @@ with tab1:
 
 # ══ TAB 2 ══════════════════════════════════════════════════════════════════════
 with tab2:
-    st.markdown('<div class="lsa-section">// Ridge regression — test performance (n=300)</div>',
+    st.markdown('<div class="lsa-section">// Ridge regression — test performance (n=370)</div>',
                 unsafe_allow_html=True)
     ca, cb = st.columns(2)
     with ca:
@@ -477,8 +477,8 @@ with tab2:
     st.markdown('<div class="lsa-section">// Metric explanations</div>',
                 unsafe_allow_html=True)
     for name, expl in {
-        "R²":   "72.2% of Ra variance is explained. Lower than projects 07–09 — laser Ra has genuine nonlinear physics that linear models can only partially capture.",
-        "RMSE": "Root Mean Squared Error in µm. At 12% of the 3.2 µm spec limit, the model is precise enough to screen recipes before production.",
+        "R²":   "64.5% of Ra variance is explained. Lower than projects 07–09 — laser Ra has genuine nonlinear physics that linear models can only partially capture.",
+        "RMSE": "Root Mean Squared Error in µm. At 13% of the 3.2 µm spec limit, the model is precise enough to screen recipes before production.",
         "MAE":  "Mean Absolute Error — average miss per cut. Use this as the practical precision estimate when setting process tolerances.",
     }.items():
         with st.expander(f"{name}  —  {metrics.get(name.lower().replace('²','2'), '—')}"):
@@ -685,7 +685,7 @@ with tab5:
                 unsafe_allow_html=True)
     actions = [
         (C_DANGER, "Thickness is the primary Ra driver — schedule by material class",
-         "material_thickness_mm coefficient is +0.385 (strongest driver). "
+         "material_thickness_mm coefficient is +0.376 (strongest driver). "
          "Create separate recipe libraries for thin (≤ 6mm) and thick (> 6mm) sheets. "
          "Never apply a thin-sheet recipe to thick material without model verification."),
         (C_TEAL,   "Use the power–speed–gas response surface as your process window",
@@ -693,11 +693,11 @@ with tab5:
          "for 12mm steel. Laminate it at the operator console as a first-response reference "
          "without needing the simulator for every job."),
         (C_WARN,   "Material switch protocol: re-query the simulator",
-         "The aluminium/steel switch carries a −0.304 coefficient (0.3 µm improvement per "
+         "The aluminium/steel switch carries a −0.297 coefficient (0.3 µm improvement per "
          "material change). When batch switching material type, run the simulator before the "
          "first cut — the recipe may need power/speed adjustment."),
         (C_OK,     "Focal offset is less critical than expected",
-         "focal_offset_mm coefficient is only +0.006 — the smallest active driver. "
+         "focal_offset_mm coefficient is only −0.010 — the smallest active driver. "
          "In practice, ±0.5 mm focal deviation contributes < 0.01 µm Ra change. "
          "Re-invest calibration time in power and gas flow settings instead."),
         (C_PURP,   "Retrain when consumables change (nozzle, lens, assist gas supplier)",

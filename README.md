@@ -18,9 +18,9 @@ This creates multicollinearity that inflates OLS coefficient estimates and makes
 
 ## 📊 Dataset
 
-- **>1,500 cut records** from a CNC laser system controller, complemented by surface quality measurements from the post-cut CMM inspection station
+- **1,847 cut records** from a CNC laser system controller, complemented by surface quality measurements from the post-cut CMM inspection station
 - **Target:** `surface_roughness_ra_um` — Ra surface roughness (µm, continuous)
-- **Range:** 0.91 – 5.70 µm  |  **Mean:** 3.18 µm  |  **Spec:** Ra ≤ 3.2 µm  |  **In-spec:** 52.2% of cuts
+- **Range:** 0.81 – 5.74 µm  |  **Mean:** 3.19 µm  |  **Spec:** Ra ≤ 3.2 µm  |  **In-spec:** 51.8% of cuts
 - **Material mix:** Carbon steel (Ra mean 3.48 µm) · Aluminium (Ra mean 2.86 µm)
 
 | Column | Type | Description |
@@ -65,7 +65,7 @@ Unlike Lasso (Project 09), the L2 norm never reaches exactly zero — it asympto
 
 **Why not Lasso here?** All 8 laser parameters have physical justification for inclusion. Lasso's zero-or-keep decision would eliminate variables that are genuinely active but temporarily suppressed by collinearity. Ridge distributes their shared contribution proportionally — which is what the physics demands.
 
-**Alpha tuning:** `RidgeCV` evaluated 80 candidates on a log scale [0.001, 1000], using 5-fold cross-validation. Selected alpha = **4.422**.
+**Alpha tuning:** `RidgeCV` evaluated 80 candidates on a log scale [0.001, 1000], using 5-fold cross-validation. Selected alpha = **4.4215**.
 
 **Preprocessing:** `StandardScaler` on all 8 features — mandatory for Ridge, same as Lasso.  
 **Split:** 80/20 train/test, `random_state=42`.
@@ -76,11 +76,11 @@ Unlike Lasso (Project 09), the L2 norm never reaches exactly zero — it asympto
 
 | Metric | Ridge | OLS | Operational Meaning |
 |---|---|---|---|
-| **R²** | **0.722** | 0.722 | 72.2% of Ra variance explained — both models match in accuracy |
-| **RMSE** | **0.394 µm** | 0.394 µm | 12.3% of the 3.2 µm spec limit — usable for go/no-go scheduling |
-| **MAE** | **0.305 µm** | — | Median absolute miss — adequate for recipe adjustment decisions |
-| **Alpha (CV)** | **4.422** | — | RidgeCV 5-fold selected |
-| **Train / Test** | **1,200 / 300 cuts** | — | 80/20 split, `random_state=42` |
+| **R²** | **0.645** | 0.645 | 64.5% of Ra variance explained — both models match in accuracy |
+| **RMSE** | **0.430 µm** | 0.430 µm | 13.4% of the 3.2 µm spec limit — usable for go/no-go scheduling |
+| **MAE** | **0.322 µm** | — | Median absolute miss — adequate for recipe adjustment decisions |
+| **Alpha (CV)** | **4.4215** | — | RidgeCV 5-fold selected |
+| **Train / Test** | **1,477 / 370 cuts** | — | 80/20 split, `random_state=42` |
 
 Ridge and OLS deliver identical test R². This is expected and correct. **Ridge's advantage is not higher R² — it is coefficient stability under multicollinearity**, which makes the model's guidance trustworthy across the operating range rather than numerically brittle.
 
@@ -92,14 +92,14 @@ All coefficients are standardised (per-σ units), making them comparable across 
 
 | Feature | Ridge Coef | Direction | Engineering Interpretation |
 |---|---|---|---|
-| `material_thickness_mm` | +0.385 | ↑ Increases Ra | Dominant driver — more material = more energy required; insufficient energy → rough cut |
-| `material_type` | −0.304 | ↓ Reduces Ra | Aluminium's superior thermal conductivity consistently produces lower Ra than steel |
-| `laser_power_w` | −0.268 | ↓ Reduces Ra | More power → cleaner melt ejection → smoother edge |
-| `assist_gas_flow_l_min` | −0.190 | ↓ Reduces Ra | Gas flow assists melt removal — stable, not artificially amplified by collinearity |
-| `oxygen_pct` | +0.052 | ↑ Increases Ra | Higher O₂ increases oxidation on the cut edge, mildly increasing roughness |
-| `shop_temp_c` | +0.025 | ↑ Increases Ra | Ambient thermal variation — small but consistent |
-| `cutting_speed_mm_s` | +0.016 | ↑ Increases Ra | Faster travel reduces energy density; Ridge assigns a modest, stable estimate |
-| `focal_offset_mm` | +0.006 | ↑ Increases Ra | Defocus reduces beam energy density at the workpiece; small effect at moderate offsets |
+| `material_thickness_mm` | +0.376 | ↑ Increases Ra | Dominant driver — more material = more energy required; insufficient energy → rough cut |
+| `material_type` | −0.297 | ↓ Reduces Ra | Aluminium's superior thermal conductivity consistently produces lower Ra than steel |
+| `laser_power_w` | −0.234 | ↓ Reduces Ra | More power → cleaner melt ejection → smoother edge |
+| `assist_gas_flow_l_min` | −0.184 | ↓ Reduces Ra | Gas flow assists melt removal — stable, not artificially amplified by collinearity |
+| `oxygen_pct` | +0.046 | ↑ Increases Ra | Higher O₂ increases oxidation on the cut edge, mildly increasing roughness |
+| `shop_temp_c` | +0.015 | ↑ Increases Ra | Ambient thermal variation — small but consistent |
+| `cutting_speed_mm_s` | −0.032 | ↓ Reduces Ra | At wide operating range, faster travel reduces energy density per unit length |
+| `focal_offset_mm` | −0.010 | ↓ Reduces Ra | Small stabilised effect; Ridge dampens this near-zero coefficient reliably |
 
 **The collinearity story:** OLS assigns inflated, unstable estimates to the power–speed–gas triplet — the signs can flip with different training samples. Ridge moderates all three with proportional shrinkage, giving each a physically plausible partial effect the process engineer can act on.
 
@@ -109,11 +109,11 @@ All coefficients are standardised (per-σ units), making them comparable across 
 
 | Scenario | Configuration | Predicted Ra | Status |
 |---|---|---|---|
-| **A — 3 mm Aluminium, Optimised** | 3200W · 20 mm/s · 10 L/min · focal 0.0 · O₂ 8% | 1.627 µm | ✅ Pass (margin +1.573 µm) |
-| **B — 12 mm Steel, Under-Powered** | 2500W · 35 mm/s · 5 L/min · focal 0.0 · O₂ 25% | 4.174 µm | ❌ Fail (outside spec) |
-| **C — 12 mm Steel, Corrected** | 3800W · 18 mm/s · 10 L/min · focal 0.0 · O₂ 25% | 2.935 µm | ✅ Pass (margin +0.265 µm) |
+| **A — 3 mm Aluminium, Optimised** | 3200W · 20 mm/s · 10 L/min · focal 0.0 · O₂ 8% | 1.684 µm | ✅ Pass (margin +1.516 µm) |
+| **B — 12 mm Steel, Under-Powered** | 2500W · 35 mm/s · 5 L/min · focal 0.0 · O₂ 25% | 3.976 µm | ❌ Fail (outside spec) |
+| **C — 12 mm Steel, Corrected** | 3800W · 18 mm/s · 10 L/min · focal 0.0 · O₂ 25% | 2.992 µm | ✅ Pass (margin +0.208 µm) |
 
-Scenario B vs C quantifies the recipe correction for 12 mm steel: raising power by 1300W, reducing speed by 17 mm/s, and increasing gas flow by 5 L/min recovers **1.24 µm Ra** — from outside spec to within it. The correction is quantified, not guessed.
+Scenario B vs C quantifies the recipe correction for 12 mm steel: raising power by 1300W, reducing speed by 17 mm/s, and increasing gas flow by 5 L/min recovers **0.984 µm Ra** — from outside spec to within it. The correction is quantified, not guessed.
 
 The 2D response surface (Power × Speed for 12 mm carbon steel) extends this into a full process window map — showing every power/speed combination that meets the Ra ≤ 3.2 µm specification.
 
@@ -129,7 +129,7 @@ Ridge_Stable_Process_Modeling/
 └── requirements.txt
 ```
 
-> 📦 **Full Project Pack** — complete dataset (1,500 records), notebook with full outputs, presentation deck (PPTX), and `app.py` Ra simulator available on [Gumroad](https://lozanolsa.gumroad.com).
+> 📦 **Full Project Pack** — complete dataset (1,847 records), notebook with full outputs, presentation deck (PPTX), and `app.py` Ra simulator available on [Gumroad](https://lozanolsa.gumroad.com).
 
 ---
 
@@ -151,7 +151,7 @@ jupyter notebook 10_Ridge_Stable_Process_Modeling.ipynb
 
 2. **Ridge and Lasso solve different problems.** Lasso (Project 09) zeros irrelevant features when some variables genuinely carry no signal. Ridge stabilises coefficients when all features are relevant but correlated. Choosing the wrong tool doesn't break the model — it breaks the interpretability of its guidance.
 
-3. **Matching OLS R² is the goal, not a disappointment.** Ridge achieves 0.722 vs OLS 0.722. This is the correct outcome: Ridge should not improve accuracy over OLS on the same data — it should achieve the same accuracy with more stable, trustworthy coefficients. The win is in the path, not the destination.
+3. **Matching OLS R² is the goal, not a disappointment.** Ridge achieves 0.645 vs OLS 0.645. This is the correct outcome: Ridge should not improve accuracy over OLS on the same data — it should achieve the same accuracy with more stable, trustworthy coefficients. The win is in the path, not the destination.
 
 4. **The regularisation path is the interpretability tool.** Plotting coefficient trajectories across 80 alpha values reveals how Ridge handles the collinear triplet: power, speed, and gas shrink together smoothly, never reversing sign or exploding. This is what stable process guidance looks like, and it is only visible in the path plot.
 
